@@ -57,6 +57,7 @@ module qsys_sampler
     (// write side
      input w_clk,
      input [32*words-1:0] w_in,
+     output reg w_reset_n = 0,
                     
      // read side
      input clk,
@@ -77,7 +78,6 @@ module qsys_sampler
     wire [timeBits-1:0] r_addr;
     wire [32*words-1:0] r_out;
     wire w_done;
-    reg w_reset_n = 0;
 
     // control
     // bits, least significant to most
@@ -102,10 +102,15 @@ module qsys_sampler
         // fire irq when we finish
         if (old_done == 0 && w_done == 1)
             irq <= 1;
+        old_done <= w_done;
 
         // if reset, then reset our reset (eww)
         if (!reset_n)
+        begin
             w_reset_n <= 0;
+            old_done <= 0;
+            irq <= 0;
+        end
     end
 
     // read
