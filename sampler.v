@@ -68,9 +68,9 @@ module qsys_sampler
 
      // control
      input csr_write,
-     input [7:0] csr_writedata,
+     input [31:0] csr_writedata,
      input csr_read,
-     output reg [7:0] csr_readdata,
+     output reg [31:0] csr_readdata,
      output reg irq = 0
      );
 

@@ -7,7 +7,7 @@
 typedef struct {
     volatile alt_u32* read;
     alt_u32 read_span;
-    volatile alt_u8* csr;
+    volatile alt_u32* csr;
     alt_u32 csr_span;
     alt_u8 irq;
     alt_u8 irq_controller_id;
