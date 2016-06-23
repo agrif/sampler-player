@@ -83,6 +83,7 @@ module qsys_player
     // bits, least significant to most
     // - reset_n (rw)
     // - done (ro)
+    // - irq (rw -- can only set to 0)
     
     reg old_done = 0;
     always @(posedge clk)
@@ -90,13 +91,13 @@ module qsys_player
         if (csr_write)
         begin
             r_reset_n <= csr_writedata[0];
+            irq <= 0;
         end
         else if (csr_read)
         begin
-            // reading the status register clears any irq
-            irq <= 0;
             csr_readdata[0] <= r_reset_n;
             csr_readdata[1] <= r_done;
+            csr_readdata[2] <= irq;
         end
 
         // fire irq when we finish

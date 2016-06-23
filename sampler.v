@@ -83,6 +83,7 @@ module qsys_sampler
     // bits, least significant to most
     // - reset_n (rw)
     // - done (ro)
+    // - irq (rw -- can only set to 0)
     
     reg old_done = 0;
     always @(posedge clk)
@@ -90,13 +91,13 @@ module qsys_sampler
         if (csr_write)
         begin
             w_reset_n <= csr_writedata[0];
+            irq <= 0;
         end
         else if (csr_read)
         begin
-            // reading the status register clears any irq
-            irq <= 0;
             csr_readdata[0] <= w_reset_n;
             csr_readdata[1] <= w_done;
+            csr_readdata[2] <= irq;
         end
 
         // fire irq when we finish

@@ -28,6 +28,7 @@ typedef struct {
 enum PlayerCSR {
     PLAYER_ENABLED = 0x01,
     PLAYER_DONE = 0x02,
+    PLAYER_IRQ = 0x04,
 };
 
 static void player_handle_irq(void* context);
@@ -57,10 +58,13 @@ static inline void player_set_enabled(Player* s, int enabled) {
     }
 }
 
+static inline void player_clear_irq(Player* s) {
+    s->csr[0] &= ~PLAYER_IRQ;
+}
+
 static void player_handle_irq(void* context) {
     Player* s = (Player*)context;
-    // ought to be done already, but this will clear the interrupt
-    while (!player_is_done(s));
+    player_clear_irq(s);
     s->finished_writes++;
 }
 

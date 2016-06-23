@@ -28,6 +28,7 @@ typedef struct {
 enum SamplerCSR {
     SAMPLER_ENABLED = 0x01,
     SAMPLER_DONE = 0x02,
+    SAMPLER_IRQ = 0x04,
 };
 
 static void sampler_handle_irq(void* context);
@@ -57,10 +58,13 @@ static inline void sampler_set_enabled(Sampler* s, int enabled) {
     }
 }
 
+static inline void sampler_clear_irq(Sampler* s) {
+    s->csr[0] &= ~SAMPLER_IRQ;
+}
+
 static void sampler_handle_irq(void* context) {
     Sampler* s = (Sampler*)context;
-    // ought to be done already, but this will clear the interrupt
-    while (!sampler_is_done(s));
+    sampler_clear_irq(s);
     s->finished_reads++;
 }
 
