@@ -115,9 +115,9 @@ module qsys_sampler
     end
 
     // read
-    reg [(words_log_2 > 0 ? words_log_2 - 1 : 0):0] saved_addr = 0;
+    reg [(words_log_2 > 0 ? words_log_2 + 5 - 1 : 0):0] saved_addr = 0;
     assign r_addr = buffer_address >> words_log_2;
-    assign buffer_readdata = r_out >> saved_addr;
+    assign buffer_readdata = r_out >> (saved_addr << 5);
     always @(posedge clk)
     begin
         if (words_log_2 > 0 && buffer_read)
