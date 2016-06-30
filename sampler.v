@@ -1,4 +1,4 @@
-// a simple bit of memory that fills itself with samples from the write side
+// a simple chunk of memory that fills itself with samples from the write side
 // and then allows reading out on the read side
 // (both sides work on different clocks)
 module sampler(w_clk, w_reset_n, w_in, w_done, r_clk, r_enable, r_addr, r_out);
@@ -50,13 +50,14 @@ endmodule
 
 // wrapping the above in a nice qsys-friendly package
 module qsys_sampler
-    #(parameter words_log_2 = 0,
+    #(parameter inputBits = 32,
+      parameter words_log_2 = 0,
       parameter words = 1,
       parameter timeBits = 10
       )
     (// write side
      input w_clk,
-     input [32*words-1:0] w_in,
+     input [inputBits-1:0] w_in,
      output reg w_reset_n = 0,
                     
      // read side
@@ -76,7 +77,7 @@ module qsys_sampler
 
     // other inputs to the sampler, driven elsewhere
     wire [timeBits-1:0] r_addr;
-    wire [32*words-1:0] r_out;
+    wire [inputBits-1:0] r_out;
     wire w_done;
 
     // control
@@ -123,7 +124,6 @@ module qsys_sampler
         if (words_log_2 > 0 && buffer_read)
             saved_addr <= buffer_address[words_log_2-1:0];
     end
-        
     
-    sampler #(32*words, timeBits) s(w_clk, w_reset_n, w_in, w_done, clk, buffer_read, r_addr, r_out);
+    sampler #(inputBits, timeBits) s(w_clk, w_reset_n, w_in, w_done, clk, buffer_read, r_addr, r_out);
 endmodule

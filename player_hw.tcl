@@ -58,7 +58,7 @@ set_parameter_property outputBits TYPE POSITIVE
 set_parameter_property outputBits UNITS bits
 set_parameter_property outputBits ALLOWED_RANGES 1:32768
 set_parameter_property outputBits DESCRIPTION ""
-set_parameter_property outputBits HDL_PARAMETER false
+set_parameter_property outputBits HDL_PARAMETER true
 set_parameter_property outputBits DESCRIPTION "number of bits of data to play at each step"
 add_parameter words POSITIVE 1 "number of 32 bit words of data to play at each step"
 set_parameter_property words DERIVED true
@@ -280,4 +280,4 @@ set_interface_property play PORT_NAME_MAP ""
 set_interface_property play CMSIS_SVD_VARIABLES ""
 set_interface_property play SVD_ADDRESS_GROUP ""
 
-add_interface_port play r_out export Output 32*words
+add_interface_port play r_out export Output outputBits

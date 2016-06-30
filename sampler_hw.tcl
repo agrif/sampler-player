@@ -58,7 +58,7 @@ set_parameter_property inputBits TYPE POSITIVE
 set_parameter_property inputBits UNITS bits
 set_parameter_property inputBits ALLOWED_RANGES 1:32768
 set_parameter_property inputBits DESCRIPTION ""
-set_parameter_property inputBits HDL_PARAMETER false
+set_parameter_property inputBits HDL_PARAMETER true
 set_parameter_property inputBits DESCRIPTION "number of bits of data to record at each step"
 add_parameter words POSITIVE 1 "number of 32 bit words of data to record at each step"
 set_parameter_property words DERIVED true
@@ -279,4 +279,4 @@ set_interface_property sample PORT_NAME_MAP ""
 set_interface_property sample CMSIS_SVD_VARIABLES ""
 set_interface_property sample SVD_ADDRESS_GROUP ""
 
-add_interface_port sample w_in export Input 32*words
+add_interface_port sample w_in export Input inputBits

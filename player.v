@@ -1,4 +1,4 @@
-// a simple bit of memory that you can fill with samples on the write side
+// a simple chunk of memory that you can fill with samples on the write side
 // and then allows playing back in order on the read side
 // (both sides work on different clocks)
 module player(r_clk, r_reset_n, r_out, r_done, w_clk, w_enable, w_addr, w_in);
@@ -49,13 +49,14 @@ endmodule
 
 // wrapping the above in a nice qsys-friendly package
 module qsys_player
-    #(parameter words_log_2 = 0,
+    #(parameter outputBits = 32,
+      parameter words_log_2 = 0,
       parameter words = 1,
       parameter timeBits = 10
       )
     (// read side
      input r_clk,
-     output [32*words-1:0] r_out,
+     output [outputBits-1:0] r_out,
      output reg r_reset_n = 0,
                     
      // write side
@@ -122,12 +123,12 @@ module qsys_player
         else
             assign w_enable = buffer_write;
     endgenerate
-        
+    
     genvar i;
     generate
         for (i = 0; i < words; i = i + 1)
         begin : players
-            player #(timeBits) p(r_clk, r_reset_n, r_out[32*i+31:32*i], r_dones[i], clk, w_enable[i], w_addr, buffer_writedata);
+            player #(timeBits) p(r_clk, r_reset_n, r_out[((i == words-1) ? (outputBits-1) : (32*i+31)):32*i], r_dones[i], clk, w_enable[i], w_addr, buffer_writedata);
         end
     endgenerate
 endmodule
