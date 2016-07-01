@@ -27,16 +27,16 @@ typedef struct sampler_state_s {
 #define SAMPLER_INSTANCE(name, state)           \
     sampler_state state = {                     \
         { ALT_LLIST_ENTRY, "/dev/" #state },    \
-        (alt_u32*) name##_READ_BASE,            \
-        name##_READ_SPAN / sizeof(alt_u32),     \
+        (alt_u32*) name##_BUFFER_BASE,          \
+        name##_BUFFER_SPAN / sizeof(alt_u32),   \
         (alt_u32*) name##_CSR_BASE,             \
         name##_CSR_SPAN / sizeof(alt_u32),      \
         name##_CSR_IRQ,                         \
         name##_CSR_IRQ_INTERRUPT_CONTROLLER_ID, \
         0,                                      \
-        name##_READ_WIDTH,                      \
-        name##_READ_SAMPLE_BITS,                \
-        name##_READ_TIME_BITS,                  \
+        name##_BUFFER_WIDTH,                    \
+        name##_BUFFER_SAMPLE_BITS,              \
+        name##_BUFFER_TIME_BITS,                \
     }
 #define SAMPLER_INIT(name, state)               \
     do  {                                       \

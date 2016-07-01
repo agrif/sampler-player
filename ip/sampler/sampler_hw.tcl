@@ -130,32 +130,32 @@ proc elaborate {} {
 
 
 # 
-# connection point read_clk
+# connection point buffer_clk
 # 
-add_interface read_clk clock end
-set_interface_property read_clk clockRate 0
-set_interface_property read_clk ENABLED true
-set_interface_property read_clk EXPORT_OF ""
-set_interface_property read_clk PORT_NAME_MAP ""
-set_interface_property read_clk CMSIS_SVD_VARIABLES ""
-set_interface_property read_clk SVD_ADDRESS_GROUP ""
+add_interface buffer_clk clock end
+set_interface_property buffer_clk clockRate 0
+set_interface_property buffer_clk ENABLED true
+set_interface_property buffer_clk EXPORT_OF ""
+set_interface_property buffer_clk PORT_NAME_MAP ""
+set_interface_property buffer_clk CMSIS_SVD_VARIABLES ""
+set_interface_property buffer_clk SVD_ADDRESS_GROUP ""
 
-add_interface_port read_clk clk clk Input 1
+add_interface_port buffer_clk clk clk Input 1
 
 
 # 
-# connection point read_reset
+# connection point buffer_reset
 # 
-add_interface read_reset reset end
-set_interface_property read_reset associatedClock read_clk
-set_interface_property read_reset synchronousEdges DEASSERT
-set_interface_property read_reset ENABLED true
-set_interface_property read_reset EXPORT_OF ""
-set_interface_property read_reset PORT_NAME_MAP ""
-set_interface_property read_reset CMSIS_SVD_VARIABLES ""
-set_interface_property read_reset SVD_ADDRESS_GROUP ""
+add_interface buffer_reset reset end
+set_interface_property buffer_reset associatedClock buffer_clk
+set_interface_property buffer_reset synchronousEdges DEASSERT
+set_interface_property buffer_reset ENABLED true
+set_interface_property buffer_reset EXPORT_OF ""
+set_interface_property buffer_reset PORT_NAME_MAP ""
+set_interface_property buffer_reset CMSIS_SVD_VARIABLES ""
+set_interface_property buffer_reset SVD_ADDRESS_GROUP ""
 
-add_interface_port read_reset reset_n reset_n Input 1
+add_interface_port buffer_reset reset_n reset_n Input 1
 
 
 # 
@@ -163,8 +163,8 @@ add_interface_port read_reset reset_n reset_n Input 1
 # 
 add_interface csr avalon end
 set_interface_property csr addressUnits WORDS
-set_interface_property csr associatedClock read_clk
-set_interface_property csr associatedReset read_reset
+set_interface_property csr associatedClock buffer_clk
+set_interface_property csr associatedReset buffer_reset
 set_interface_property csr bitsPerSymbol 8
 set_interface_property csr burstOnBurstBoundariesOnly false
 set_interface_property csr burstcountUnits WORDS
@@ -194,37 +194,37 @@ set_interface_assignment csr embeddedsw.configuration.isPrintableDevice 0
 
 
 # 
-# connection point read
+# connection point buffer
 # 
-add_interface read avalon end
-set_interface_property read addressUnits WORDS
-set_interface_property read associatedClock read_clk
-set_interface_property read associatedReset read_reset
-set_interface_property read bitsPerSymbol 8
-set_interface_property read burstOnBurstBoundariesOnly false
-set_interface_property read burstcountUnits WORDS
-set_interface_property read explicitAddressSpan 0
-set_interface_property read holdTime 0
-set_interface_property read linewrapBursts false
-set_interface_property read maximumPendingReadTransactions 0
-set_interface_property read readLatency 0
-set_interface_property read readWaitTime 1
-set_interface_property read setupTime 0
-set_interface_property read timingUnits Cycles
-set_interface_property read writeWaitTime 0
-set_interface_property read ENABLED true
-set_interface_property read EXPORT_OF ""
-set_interface_property read PORT_NAME_MAP ""
-set_interface_property read CMSIS_SVD_VARIABLES ""
-set_interface_property read SVD_ADDRESS_GROUP ""
+add_interface buffer avalon end
+set_interface_property buffer addressUnits WORDS
+set_interface_property buffer associatedClock buffer_clk
+set_interface_property buffer associatedReset buffer_reset
+set_interface_property buffer bitsPerSymbol 8
+set_interface_property buffer burstOnBurstBoundariesOnly false
+set_interface_property buffer burstcountUnits WORDS
+set_interface_property buffer explicitAddressSpan 0
+set_interface_property buffer holdTime 0
+set_interface_property buffer linewrapBursts false
+set_interface_property buffer maximumPendingReadTransactions 0
+set_interface_property buffer readLatency 0
+set_interface_property buffer readWaitTime 1
+set_interface_property buffer setupTime 0
+set_interface_property buffer timingUnits Cycles
+set_interface_property buffer writeWaitTime 0
+set_interface_property buffer ENABLED true
+set_interface_property buffer EXPORT_OF ""
+set_interface_property buffer PORT_NAME_MAP ""
+set_interface_property buffer CMSIS_SVD_VARIABLES ""
+set_interface_property buffer SVD_ADDRESS_GROUP ""
 
-add_interface_port read buffer_read read Input 1
-add_interface_port read buffer_address address Input timeBits+words_log_2
-add_interface_port read buffer_readdata readdata Output 32
-set_interface_assignment read embeddedsw.configuration.isFlash 0
-set_interface_assignment read embeddedsw.configuration.isMemoryDevice 0
-set_interface_assignment read embeddedsw.configuration.isNonVolatileStorage 0
-set_interface_assignment read embeddedsw.configuration.isPrintableDevice 0
+add_interface_port buffer buffer_read read Input 1
+add_interface_port buffer buffer_address address Input timeBits+words_log_2
+add_interface_port buffer buffer_readdata readdata Output 32
+set_interface_assignment buffer embeddedsw.configuration.isFlash 0
+set_interface_assignment buffer embeddedsw.configuration.isMemoryDevice 0
+set_interface_assignment buffer embeddedsw.configuration.isNonVolatileStorage 0
+set_interface_assignment buffer embeddedsw.configuration.isPrintableDevice 0
 
 
 # 
@@ -232,8 +232,8 @@ set_interface_assignment read embeddedsw.configuration.isPrintableDevice 0
 # 
 add_interface done interrupt end
 set_interface_property done associatedAddressablePoint csr
-set_interface_property done associatedClock read_clk
-set_interface_property done associatedReset read_reset
+set_interface_property done associatedClock buffer_clk
+set_interface_property done associatedReset buffer_reset
 set_interface_property done ENABLED true
 set_interface_property done EXPORT_OF ""
 set_interface_property done PORT_NAME_MAP ""
@@ -261,9 +261,9 @@ add_interface_port sample_clk w_clk clk Input 1
 # connection point sample_reset
 # 
 add_interface sample_reset reset start
-set_interface_property sample_reset associatedClock read_clk
+set_interface_property sample_reset associatedClock buffer_clk
 set_interface_property sample_reset associatedDirectReset ""
-set_interface_property sample_reset associatedResetSinks read_reset
+set_interface_property sample_reset associatedResetSinks buffer_reset
 set_interface_property sample_reset synchronousEdges DEASSERT
 set_interface_property sample_reset ENABLED true
 set_interface_property sample_reset EXPORT_OF ""

@@ -27,16 +27,16 @@ typedef struct player_state_s {
 #define PLAYER_INSTANCE(name, state)            \
     player_state state = {                      \
         { ALT_LLIST_ENTRY, "/dev/" #state },    \
-        (alt_u32*) name##_WRITE_BASE,           \
-        name##_WRITE_SPAN / sizeof(alt_u32),    \
+        (alt_u32*) name##_BUFFER_BASE,          \
+        name##_BUFFER_SPAN / sizeof(alt_u32),   \
         (alt_u32*) name##_CSR_BASE,             \
         name##_CSR_SPAN / sizeof(alt_u32),      \
         name##_CSR_IRQ,                         \
         name##_CSR_IRQ_INTERRUPT_CONTROLLER_ID, \
         0,                                      \
-        name##_WRITE_WIDTH,                     \
-        name##_WRITE_SAMPLE_BITS,               \
-        name##_WRITE_TIME_BITS,                 \
+        name##_BUFFER_WIDTH,                    \
+        name##_BUFFER_SAMPLE_BITS,              \
+        name##_BUFFER_TIME_BITS,                \
     }
 #define PLAYER_INIT(name, state)               \
     do  {                                      \
