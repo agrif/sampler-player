@@ -55,13 +55,17 @@ should be automatically added to your code when you use these modules.
 
 To use these modules, include the header files:
 
-    #include "sampler.h"
-    #include "player.h"
+```c
+#include "sampler.h"
+#include "player.h"
+```
 
 To access them, you must open them:
 
-    sampler_state* samp = sampler_open("/dev/sampler_name_in_qsys");
-    player_state* play = player_open("/dev/player_name_in_qsys");
+```c
+sampler_state* samp = sampler_open("/dev/sampler_name_in_qsys");
+player_state* play = player_open("/dev/player_name_in_qsys");
+```
 
 After initializing in this way, `samp->buffer` will be an array where
 sampled data is stored (as 32-bit unsigned integers), and
