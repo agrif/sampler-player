@@ -25,6 +25,6 @@ void sampler_initialize(sampler_state* s) {
 }
 
 sampler_state* sampler_open(const char* name) {
-    sampler_state* s = alt_find_dev(name, &alt_dev_list);
+    sampler_state* s = (sampler_state*)alt_find_dev(name, &alt_dev_list);
     return s;
 }

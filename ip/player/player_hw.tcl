@@ -111,10 +111,16 @@ proc elaborate {} {
     set our_words [expr {ceil($our_bits / 32.0)}]
     set our_words_log_2 [expr {ceil(log($our_words)/log(2))}]
     set our_time_bits [get_parameter_value timeBits]
-    set our_addr_bits [expr {$our_words_log_2 + 2 + $our_time_bits}]
+    set our_sample_bits [expr {int($our_words_log_2 + 2)}]
+    set our_addr_bits [expr {$our_sample_bits + $our_time_bits}]
     set_parameter_value words $our_words
     set_parameter_value words_log_2 $our_words_log_2
     set_parameter_value addrBits $our_addr_bits
+
+    # set up system.h
+    set_module_assignment embeddedsw.CMacro.WIDTH $our_bits
+    set_module_assignment embeddedsw.CMacro.TIME_BITS $our_time_bits
+    set_module_assignment embeddedsw.CMacro.SAMPLE_BITS $our_sample_bits
 }
 
 
