@@ -36,7 +36,10 @@ module player(r_clk, r_reset_n, r_out, r_done, w_clk, w_enable, w_addr, w_in);
 
         // if we're reset
         if (!r_reset_n)
+        begin
+            r_out <= memory[0];
             r_addr <= 0;
+        end
     end
 
     // write side
