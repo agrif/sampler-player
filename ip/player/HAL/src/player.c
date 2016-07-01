@@ -20,8 +20,10 @@ void player_initialize(player_state* s) {
 #else
         alt_irq_register(s->irq, s, player_handle_irq);
 #endif
-        
     }
+
+    // register with the HAL
+    alt_dev_reg(&(s->dev));
 }
 
 player_state* player_open(const char* name) {

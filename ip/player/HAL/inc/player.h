@@ -38,11 +38,8 @@ typedef struct player_state_s {
         name##_BUFFER_SAMPLE_BITS,              \
         name##_BUFFER_TIME_BITS,                \
     }
-#define PLAYER_INIT(name, state)               \
-    do  {                                      \
-        player_initialize(&state);             \
-        alt_dev_reg((alt_dev*)(&state));       \
-    } while (0)
+#define PLAYER_INIT(name, state) \
+        player_initialize(&state)
 
 extern void player_initialize(player_state* s);
 

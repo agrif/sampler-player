@@ -20,8 +20,10 @@ void sampler_initialize(sampler_state* s) {
 #else
         alt_irq_register(s->irq, s, sampler_handle_irq);
 #endif
-        
     }
+
+    // register with the HAL
+    alt_dev_reg(&(s->dev));
 }
 
 sampler_state* sampler_open(const char* name) {

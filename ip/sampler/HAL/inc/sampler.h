@@ -38,11 +38,8 @@ typedef struct sampler_state_s {
         name##_BUFFER_SAMPLE_BITS,              \
         name##_BUFFER_TIME_BITS,                \
     }
-#define SAMPLER_INIT(name, state)               \
-    do  {                                       \
-        sampler_initialize(&state);             \
-        alt_dev_reg((alt_dev*)(&state));        \
-    } while (0)
+#define SAMPLER_INIT(name, state) \
+    sampler_initialize(&state)
 
 extern void sampler_initialize(sampler_state* s);
 
