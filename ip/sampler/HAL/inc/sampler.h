@@ -19,9 +19,11 @@ typedef struct sampler_state_s {
     alt_u8 irq;
     alt_u8 irq_controller_id;
     volatile unsigned int interrupts;
-    alt_u8 width;
+    alt_u8 width_bits;
+    alt_u8 width_words;
     alt_u8 sample_bits;
     alt_u8 time_bits;
+    alt_u32 time_length;
 } sampler_state;
 
 #define SAMPLER_INSTANCE(name, state)           \
@@ -35,8 +37,10 @@ typedef struct sampler_state_s {
         name##_CSR_IRQ_INTERRUPT_CONTROLLER_ID, \
         0,                                      \
         name##_BUFFER_WIDTH,                    \
+        (name##_BUFFER_WIDTH + 31) / 32,        \
         name##_BUFFER_SAMPLE_BITS,              \
         name##_BUFFER_TIME_BITS,                \
+        1 << name##_BUFFER_TIME_BITS,           \
     }
 #define SAMPLER_INIT(name, state) \
     sampler_initialize(&state)
@@ -63,6 +67,10 @@ static inline void sampler_set_enabled(sampler_state* s, int enabled) {
     } else {
         s->csr[0] &= ~SAMPLER_CSR_ENABLED_MSK;
     }
+}
+
+static inline volatile alt_u32* sampler_get_time(sampler_state* s, alt_u32 time) {
+    return &(s->buffer[time << (s->sample_bits - 2)]);
 }
 
 #ifdef __cplusplus

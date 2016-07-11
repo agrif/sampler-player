@@ -74,6 +74,12 @@ sampled data is stored (as 32-bit unsigned integers), and
 Similarly, `play->buffer` will store playback data (as 32-bit unsigned
 integers) and `play->buffer_size` will contain the size of that array.
 
+Alternately, you can ask for a pointer to the data at a specific time
+by using `sampler_get_time(samp, time)`. This is a volatile pointer to
+an array of 32-bit unsigned integers, with length
+`samp->width_words`. `time` must be less than
+`samp->time_length`. Similar functions exist for Players.
+
 Both modules start out disabled. Neither module will do anything unless
 told to do so:
 
