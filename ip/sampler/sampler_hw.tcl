@@ -32,6 +32,12 @@ set_module_property REPORT_TO_TALKBACK false
 set_module_property ALLOW_GREYBOX_GENERATION false
 set_module_property ELABORATION_CALLBACK elaborate
 
+# device tree
+set_module_assignment embeddedsw.dts.vendor "osuql"
+set_module_assignment embeddedsw.dts.name "sampler"
+set_module_assignment embeddedsw.dts.group "sampler-player"
+# set_module_assignment embeddedsw.dts.compatible "osuql,sampler"
+
 
 # 
 # file sets
@@ -121,6 +127,11 @@ proc elaborate {} {
     set_module_assignment embeddedsw.CMacro.WIDTH $our_bits
     set_module_assignment embeddedsw.CMacro.TIME_BITS $our_time_bits
     set_module_assignment embeddedsw.CMacro.SAMPLE_BITS $our_sample_bits
+
+    # set up device tree
+    set_module_assignment embeddedsw.dts.params.sample-width $our_bits
+    set_module_assignment embeddedsw.dts.params.time-bits $our_time_bits
+    set_module_assignment embeddedsw.dts.params.sample-bits $our_sample_bits
 }
 
 
