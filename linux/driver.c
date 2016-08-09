@@ -16,13 +16,31 @@ static u8 player_nums[MAX_DEVICES];
 
 MODULE_DEVICE_TABLE(of, of_match);
 
-#define ATTRIBUTE(name, format)                                         \
+#define STRUCT_ATTRIBUTE(name, format)                                  \
     static ssize_t name##_show(struct device* dev, struct device_attribute* attr, char* buf) { \
         return scnprintf(buf, PAGE_SIZE, format "\n", dev_to_sp(dev)->name); \
     }                                                                   \
     static DEVICE_ATTR(name, S_IRUGO, name##_show, NULL);
+#define CSR_ATTRIBUTE(name, write, mask)                                \
+    static ssize_t name##_show(struct device* dev, struct device_attribute* attr, char* buf) { \
+        return scnprintf(buf, PAGE_SIZE, "%i\n", ioread8(dev_to_sp(dev)->csr) & mask ? 1 : 0); \
+    }                                                                   \
+    static ssize_t name##_store(struct device* dev, struct device_attribute* attr, const char* buf, size_t count) { \
+        struct sp_device* sp = dev_to_sp(dev);                          \
+        u8 input, csr;                                                  \
+        int ret = kstrtou8(buf, 10, &input);                            \
+        if (ret < 0)                                                    \
+            return ret;                                                 \
+        csr = ioread8(sp->csr);                                         \
+        if (input) {                                                    \
+            iowrite8(csr | mask, sp->csr);                              \
+        } else  {                                                       \
+            iowrite8(csr & (~mask), sp->csr);                           \
+        }                                                               \
+        return count;                                                   \
+    }                                                                   \
+    static DEVICE_ATTR(name, S_IRUGO | (write ? S_IWUSR : 0), name##_show, name##_store);
 #include "attributes.h"
-#undef ATTRIBUTE
 
 static int remove(struct platform_device* dev) {
     struct sp_device* sp;
@@ -32,9 +50,8 @@ static int remove(struct platform_device* dev) {
         osuql_sp_remove_block(sp);
 
         // this is safe to call on files that don't exist, thankfully
-#define ATTRIBUTE(name, format) device_remove_file(&dev->dev, &dev_attr_##name);
+#define ATTRIBUTE(name) device_remove_file(&dev->dev, &dev_attr_##name);
 #include "attributes.h"
-#undef ATTRIBUTE
         
         // unmap our memory
         if (sp->buffer)
@@ -153,14 +170,13 @@ static int probe(struct platform_device* dev) {
     }
 
     // register our attributes
-#define ATTRIBUTE(name, format)                                     \
+#define ATTRIBUTE(name)                                             \
     ret = device_create_file(&dev->dev, &dev_attr_##name);          \
     if (ret < 0) {                                                  \
         remove(dev);                                                \
         return ret;                                                 \
     }
 #include "attributes.h"
-#undef ATTRIBUTE
 
     // create our block device
     ret = osuql_sp_init_block(sp);

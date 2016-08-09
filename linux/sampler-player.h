@@ -17,6 +17,10 @@ extern int osuql_sp_major_num;
 extern int osuql_sp_init_block(struct sp_device*);
 extern void osuql_sp_remove_block(struct sp_device*);
 
+#define CSR_ENABLED 0x1
+#define CSR_DONE    0x2
+#define CSR_IRQ     0x4
+
 enum sp_type {
     TYPE_SAMPLER,
     TYPE_PLAYER,
