@@ -1,4 +1,5 @@
 #include <linux/blkdev.h>
+#include <linux/fs.h>
 
 #include "sampler-player.h"
 
@@ -8,11 +9,40 @@ int osuql_sp_major_num = 0;
 
 static void request(struct request_queue* q) {
     struct request* req;
+    struct sp_device* sp;
+    bool chunks_left = true;
+    size_t start, size;
+    
     while ((req = blk_fetch_request(q)) != NULL) {
-        // skip all for now
-        printk(KERN_NOTICE DRIVER_NAME ": skipping request.\n");
-        __blk_end_request_all(req, -EIO);
-        continue;
+        // skip non-fs requests
+        if (req->cmd_type != REQ_TYPE_FS) {
+            __blk_end_request_all(req, -EIO);
+            continue;
+        }
+
+        while (chunks_left) {
+            sp = disk_to_sp(req->rq_disk);
+            start = blk_rq_pos(req) * KERNEL_SECTOR_SIZE;
+            size = blk_rq_cur_sectors(req) * KERNEL_SECTOR_SIZE;
+            
+            if (start + size > sp->length) {
+                // end of device, should never happen
+                chunks_left = __blk_end_request_cur(req, -EIO);
+                continue;
+            }
+
+            // request buffer is in req->buffer
+            // device buffer is in sp->buffer
+            if (rq_data_dir(req)) {
+                // write
+                memcpy_toio(sp->buffer + start, req->buffer, size);
+            } else {
+                // read
+                memcpy_fromio(req->buffer, sp->buffer + start, size);
+            }
+            
+            chunks_left = __blk_end_request_cur(req, 0);
+        }
     }
 }
 
@@ -53,6 +83,7 @@ int osuql_sp_init_block(struct sp_device* sp) {
     sp->gd->first_minor += MINORS * sp->number;
     sp->gd->fops = &ops;
     sp->gd->queue = sp->queue;
+    sp->gd->private_data = sp;
     sp->gd->driverfs_dev = sp->dev;
     snprintf(sp->gd->disk_name, 32, "%s%i", BY_TYPE(sp->type, SAMPLER_DEV, PLAYER_DEV), sp->number);
     set_capacity(sp->gd, (sp->length + KERNEL_SECTOR_SIZE - 1) / KERNEL_SECTOR_SIZE);

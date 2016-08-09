@@ -38,7 +38,7 @@ enum sp_type {
 // dev (struct device*), disk (struct gendisk*), and sp (struct sp_device*)
 #define dev_to_sp(device) ((struct sp_device*)dev_get_drvdata(device))
 #define sp_to_dev(sp) ((sp)->dev)
-#define disk_to_sp(disk) ((struct sp_device*)container_of((disk), struct sp_device, gd))
+#define disk_to_sp(disk) ((struct sp_device*)(disk)->private_data)
 #define sp_to_disk(sp) ((sp)->gd)
 
 struct sp_device {
