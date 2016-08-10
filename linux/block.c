@@ -2,6 +2,7 @@
 #include <linux/fs.h>
 
 #include "sampler-player.h"
+#include "ioctls.h"
 
 #define KERNEL_SECTOR_SIZE 512
 
@@ -47,7 +48,43 @@ static void request(struct request_queue* q) {
 }
 
 static int ioctl(struct block_device* blk, fmode_t mode, unsigned int cmd, unsigned long arg) {
-    return -ENOTTY; // unknown command
+    int err = 0;
+    u8 csr;
+    struct sp_device* sp = disk_to_sp(blk->bd_disk);
+
+    // only handle known commands
+    if (_IOC_TYPE(cmd) != OSUQL_SP_IOC_MAGIC)
+        return -ENOTTY;
+    if (_IOC_NR(cmd) >= OSUQL_SP_IOC_MAX)
+        return -ENOTTY;
+
+    // check readability for pointer arguments
+    if (_IOC_DIR(cmd) & _IOC_READ)
+        err = !access_ok(VERIFY_WRITE, (void __user*)arg, _IOC_SIZE(cmd));
+    else if (_IOC_DIR(cmd) & _IOC_WRITE)
+        err = !access_ok(VERIFY_READ, (void __user*)arg, _IOC_SIZE(cmd));
+    if (err)
+        return -EFAULT;
+
+    switch (cmd) {
+        
+    case OSUQL_SP_GET_ENABLED:
+        return (ioread8(sp->csr) & CSR_ENABLED) ? 1 : 0;
+    case OSUQL_SP_SET_ENABLED:
+        csr = ioread8(sp->csr);
+        if (arg) {
+            iowrite8(csr | CSR_ENABLED, sp->csr);
+        } else {
+            iowrite8(csr & (~CSR_ENABLED), sp->csr);
+        }
+        return 0;
+
+    case OSUQL_SP_GET_DONE:
+        return (ioread8(sp->csr) & CSR_DONE) ? 1 : 0;
+
+    default:
+        return -ENOTTY;
+    }
 }
 
 static struct block_device_operations ops = {

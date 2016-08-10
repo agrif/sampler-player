@@ -23,7 +23,7 @@ MODULE_DEVICE_TABLE(of, of_match);
     static DEVICE_ATTR(name, S_IRUGO, name##_show, NULL);
 #define CSR_ATTRIBUTE(name, write, mask)                                \
     static ssize_t name##_show(struct device* dev, struct device_attribute* attr, char* buf) { \
-        return scnprintf(buf, PAGE_SIZE, "%i\n", ioread8(dev_to_sp(dev)->csr) & mask ? 1 : 0); \
+        return scnprintf(buf, PAGE_SIZE, "%i\n", (ioread8(dev_to_sp(dev)->csr) & mask) ? 1 : 0); \
     }                                                                   \
     static ssize_t name##_store(struct device* dev, struct device_attribute* attr, const char* buf, size_t count) { \
         struct sp_device* sp = dev_to_sp(dev);                          \
