@@ -32,7 +32,7 @@ enum sp_type {
 #define MAX_DEVICES 255
 
 // how many minor numbers each device can have (for partitions)
-#define MINORS 16
+#define MINORS 1
 
 // getting between our three major representations
 // dev (struct device*), disk (struct gendisk*), and sp (struct sp_device*)
