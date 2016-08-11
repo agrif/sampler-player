@@ -4,6 +4,7 @@
 import struct
 import fcntl
 import os.path
+import numpy
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -47,10 +48,13 @@ GET_DONE = _IO(IOC_MAGIC, 2)
 
 def sysfs_property(name):
     def getter(self):
-        return self.get_sysfs(name)
-    def setter(self, v):
-        self.set_sysfs(name, v)
-    return property(getter, setter)
+        v = getattr(self, '_' + name, None)
+        if v is not None:
+            return v
+        v = self.get_sysfs(name)
+        setattr(self, '_' + name, v)
+        return v
+    return property(getter)
 
 def ioctl_property(get, set=None):
     def getter(self):
@@ -84,20 +88,30 @@ class SamplerPlayer:
         else:
             self.device = open('/dev/' + self.name, 'rb', buffering=0)
 
-    def trigger(self):
-        self.enabled = 0
-        self.enabled = 1
-        self.reload()
-
     def read(self):
+        # read fresh stuff
+        self.reload()
         self.device.seek(0)
-        return self.device.read(self.length)
+        outputs = numpy.fromfile(self.device, dtype=numpy.uint8, count=self.length)        
+        outputs = numpy.reshape(outputs, (self.time_length, self.sample_length))
+        outputs = numpy.unpackbits(outputs, axis=1)
+        return outputs[:,:self.sample_width]
 
-    def write(self, buf):
-        if len(buf) < self.length:
-            buf += b'\00' * (self.length - len(buf))
+    def write(self, inputs):
+        time, samps = inputs.shape
+        if time >= self.time_length or samps >= self.sample_width:
+            raise ValueError('too much data to write')
+
+        inputs = numpy.packbits(inputs, axis=1)
+        time, samps = inputs.shape
+        inputs = numpy.pad(inputs, [(0, self.time_length - time), (0, self.sample_length - samps)], 'constant')
+        
         self.device.seek(0)
-        self.device.write(buf)
+        inputs.tofile(self.device)
+
+        # flush to disk (a hack)
+        #self.device.flush()
+        self.reload()
 
     def get_sysfs(self, attr):
         with open('/sys/block/' + self.name + '/device/' + attr) as f:
@@ -118,22 +132,51 @@ class SamplerPlayer:
     enabled = ioctl_property(GET_ENABLED, SET_ENABLED)
     done = ioctl_property(GET_DONE)
 
-s = SamplerPlayer('/dev/sampler0')
-p = SamplerPlayer('/dev/player0', True)
+class SPPair:
+    def __init__(self, sampler, player):
+        self.samp = SamplerPlayer(sampler)
+        self.play = SamplerPlayer(player, True)
 
-s.enabled = 0
-p.enabled = 0
+    def run(self, inputs):
+        self.samp.enabled = 0
+        self.play.enabled = 0
 
-p.write(b'\xff' * p.sample_length + b'\xbb' * p.sample_length)
+        self.play.write(inputs)
 
-fs = s.device.fileno()
-fp = p.device.fileno()
-ioctl = fcntl.ioctl
-ioctl(fs, SET_ENABLED, 1)
-ioctl(fp, SET_ENABLED, 1)
+        # FIXME better simultaneous start
+        fs = self.samp.device.fileno()
+        fp = self.play.device.fileno()
+        ioctl = fcntl.ioctl
+        ioctl(fs, SET_ENABLED, 1)
+        ioctl(fp, SET_ENABLED, 1)
 
-#s.enabled = 1
-#p.enabled = 1
+        while not self.samp.done:
+            continue
+        while not self.play.done:
+            continue
 
-s.reload()
-print(s.read()[0])
+        self.samp.enable = 0
+        self.play.enable = 0
+
+        return self.samp.read()
+
+pair = SPPair('/dev/sampler0', '/dev/player0')
+
+import random
+import time
+
+ITERS = 100
+start = time.time()
+
+inputs = numpy.array([[1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0]])
+for _ in range(ITERS):
+    other = [random.choice([0, 1]) for _ in range(8)]
+    inputs[1,:] = other
+    outputs = pair.run(inputs)
+
+end = time.time()
+
+print('ran {} iters in {} seconds ({} per second)'.format(ITERS, end - start, ITERS / (end - start)))
+print("0x{:02x}".format(*numpy.packbits(other)))
+print(outputs)
+print(outputs.shape)

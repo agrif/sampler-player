@@ -23,8 +23,9 @@ STRUCT_ATTRIBUTE(time_length, "%i")
 STRUCT_ATTRIBUTE(bits, "%i")
 STRUCT_ATTRIBUTE(length, "%i")
 
-CSR_ATTRIBUTE(enabled, 1, CSR_ENABLED)
-CSR_ATTRIBUTE(done, 0, CSR_DONE)
+// disabled, I figure the ioctls are better for this
+//CSR_ATTRIBUTE(enabled, 1, CSR_ENABLED)
+//CSR_ATTRIBUTE(done, 0, CSR_DONE)
 
 #undef STRUCT_ATTRIBUTE
 #undef CSR_ATTRIBUTE
