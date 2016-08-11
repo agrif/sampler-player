@@ -16,9 +16,10 @@ static u8 player_nums[MAX_DEVICES];
 
 MODULE_DEVICE_TABLE(of, of_match);
 
-#define STRUCT_ATTRIBUTE(name, format)                                  \
+#define STRUCT_ATTRIBUTE(name, ...)                                     \
     static ssize_t name##_show(struct device* dev, struct device_attribute* attr, char* buf) { \
-        return scnprintf(buf, PAGE_SIZE, format "\n", dev_to_sp(dev)->name); \
+        struct sp_device* sp = dev_to_sp(dev);                          \
+        return scnprintf(buf, PAGE_SIZE, __VA_ARGS__);                  \
     }                                                                   \
     static DEVICE_ATTR(name, S_IRUGO, name##_show, NULL);
 #define CSR_ATTRIBUTE(name, write, mask)                                \

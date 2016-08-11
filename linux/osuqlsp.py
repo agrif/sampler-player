@@ -1,10 +1,14 @@
-# some ioctl nonsense
-# http://code.activestate.com/recipes/578225-linux-ioctl-numbers-in-python/
-
-import struct
+import argparse
 import fcntl
 import os.path
+import random
+import struct
+import time
+
 import numpy
+
+# some ioctl nonsense
+# http://code.activestate.com/recipes/578225-linux-ioctl-numbers-in-python/
 
 _IOC_NRBITS = 8
 _IOC_TYPEBITS = 8
@@ -46,12 +50,12 @@ SET_ENABLED = _IO(IOC_MAGIC, 1)
 
 GET_DONE = _IO(IOC_MAGIC, 2)
 
-def sysfs_property(name):
+def sysfs_property(name, type=int):
     def getter(self):
         v = getattr(self, '_' + name, None)
         if v is not None:
             return v
-        v = self.get_sysfs(name)
+        v = self.get_sysfs(name, type=type)
         setattr(self, '_' + name, v)
         return v
     return property(getter)
@@ -65,12 +69,11 @@ def ioctl_property(get, set=None):
         return property(getter, setter)
     return property(getter)
 
-class SamplerPlayer:
-    def __init__(self, path, write=False):
+class SamplerOrPlayer:
+    def __init__(self, path):
         if not path.startswith('/dev/'):
             raise ValueError('not a valid device')
         self.name = path[len('/dev/'):]
-        self.is_player = write
         self.device = None
 
         if not os.path.exists('/dev/' + self.name):
@@ -83,10 +86,12 @@ class SamplerPlayer:
     def reload(self):
         if self.device:
             self.device.close()
-        if self.is_player:
+        if self.type == 'player':
             self.device = open('/dev/' + self.name, 'wb', buffering=0)
-        else:
+        elif self.type == 'sampler':
             self.device = open('/dev/' + self.name, 'rb', buffering=0)
+        else:
+            raise RuntimeError('unknown type ' + self.type)
 
     def read(self):
         # read fresh stuff
@@ -113,9 +118,9 @@ class SamplerPlayer:
         #self.device.flush()
         self.reload()
 
-    def get_sysfs(self, attr):
+    def get_sysfs(self, attr, type=int):
         with open('/sys/block/' + self.name + '/device/' + attr) as f:
-            return int(f.read().strip())
+            return type(f.read().strip())
 
     def set_sysfs(self, attr, val):
         with open('/sys/block/' + self.name + '/device/' + attr, 'w') as f:
@@ -128,14 +133,27 @@ class SamplerPlayer:
     time_length = sysfs_property('time_length')
     bits = sysfs_property('bits')
     length = sysfs_property('length')
+    type = sysfs_property('type', type=str)
 
     enabled = ioctl_property(GET_ENABLED, SET_ENABLED)
     done = ioctl_property(GET_DONE)
 
+class Sampler(SamplerOrPlayer):
+    def __init__(self, device):
+        super().__init__(device)
+        if not self.type == 'sampler':
+            raise RuntimeError('device is not a sampler')
+
+class Player(SamplerOrPlayer):
+    def __init__(self, device):
+        super().__init__(device)
+        if not self.type == 'player':
+            raise RuntimeError('device is not a player')
+    
 class SPPair:
     def __init__(self, sampler, player):
-        self.samp = SamplerPlayer(sampler)
-        self.play = SamplerPlayer(player, True)
+        self.samp = Sampler(sampler)
+        self.play = Player(player)
 
     def run(self, inputs):
         self.samp.enabled = 0
@@ -158,23 +176,26 @@ class SPPair:
 
         return self.samp.read()
 
-pair = SPPair('/dev/sampler0', '/dev/player0')
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('sampler')
+    parser.add_argument('player')
+    parser.add_argument('-i', '--iterations', type=int, default=100)
 
-import random
-import time
+    args = parser.parse_args()
+    pair = SPPair(args.sampler, args.player)
 
-ITERS = 1
-start = time.time()
+    start = time.time()
 
-inputs = numpy.array([[1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0]])
-for _ in range(ITERS):
-    other = [random.choice([0, 1]) for _ in range(8)]
-    inputs[1,:] = other
-    outputs = pair.run(inputs)
+    inputs = numpy.array([[1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0]])
+    for _ in range(args.iterations):
+        other = [random.choice([0, 1]) for _ in range(8)]
+        inputs[1,:] = other
+        outputs = pair.run(inputs)
 
-end = time.time()
+        end = time.time()
 
-print('ran {} iters in {} seconds ({} per second)'.format(ITERS, end - start, ITERS / (end - start)))
-print("0x{:02x}".format(*numpy.packbits(other)))
-print(outputs)
-print(outputs.shape)
+    print('ran {} iters in {} seconds ({} per second)'.format(args.iterations, end - start, args.iterations / (end - start)))
+    print('0x{:02x}'.format(*numpy.packbits(other)))
+    print(outputs)
+    print(outputs.shape)
