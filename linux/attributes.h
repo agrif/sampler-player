@@ -23,6 +23,7 @@ STRUCT_ATTRIBUTE(time_length, "%i\n", sp->time_length)
 STRUCT_ATTRIBUTE(bits, "%i\n", sp->bits)
 STRUCT_ATTRIBUTE(length, "%i\n", sp->length)
 STRUCT_ATTRIBUTE(type, "%s\n", BY_TYPE(sp->type, "sampler", "player"))
+STRUCT_ATTRIBUTE(interrupts, "%i\n", sp->interrupts)
 
 // disabled, I figure the ioctls are better for this
 //CSR_ATTRIBUTE(enabled, 1, CSR_ENABLED)

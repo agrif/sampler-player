@@ -1,6 +1,8 @@
 #include <linux/of.h>
+#include <linux/of_irq.h>
 #include <linux/io.h>
 #include <linux/slab.h>
+#include <linux/interrupt.h>
 
 #include "sampler-player.h"
 
@@ -43,6 +45,15 @@ MODULE_DEVICE_TABLE(of, of_match);
     static DEVICE_ATTR(name, S_IRUGO | (write ? S_IWUSR : 0), name##_show, name##_store);
 #include "attributes.h"
 
+static irqreturn_t handle_interrupt(int irq, void* cookie) {
+    struct sp_device* sp = cookie;
+    u8 csr = ioread8(sp->csr);
+    csr &= ~CSR_IRQ;
+    iowrite8(csr, sp->csr);
+    sp->interrupts++;
+    return IRQ_HANDLED;
+}
+
 static int remove(struct platform_device* dev) {
     struct sp_device* sp;
 
@@ -53,6 +64,10 @@ static int remove(struct platform_device* dev) {
         // this is safe to call on files that don't exist, thankfully
 #define ATTRIBUTE(name) device_remove_file(&dev->dev, &dev_attr_##name);
 #include "attributes.h"
+
+        // unregister irq if we've registered it
+        if (sp->irq)
+            free_irq(sp->irq, sp);
         
         // unmap our memory
         if (sp->buffer)
@@ -168,6 +183,17 @@ static int probe(struct platform_device* dev) {
     if (!sp->buffer || !sp->csr) {
         remove(dev);
         return -EINVAL;
+    }
+
+    // find and register our irq
+    sp->irq = irq_of_parse_and_map(dev->dev.of_node, 0);
+    if (sp->irq) {
+        // the irq is, actually, optional. since it does very little.
+        ret = request_irq(sp->irq, handle_interrupt, 0, DRIVER_NAME, sp);
+        if (ret < 0) {
+            remove(dev);
+            return ret;
+        }
     }
 
     // register our attributes

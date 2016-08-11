@@ -60,7 +60,8 @@ struct sp_device {
     void* buffer;
     void* csr;
 
-    // FIXME irq stuff
+    unsigned int irq;
+    unsigned int interrupts;
 
     // see "attributes.h" for exposing these via sysfs
 
