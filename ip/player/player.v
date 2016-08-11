@@ -86,7 +86,7 @@ module qsys_player
     reg csr_enable = 0;
 
     // our r_reset_n is driven by both the csr_enable and r_enable
-    assign r_reset_n = csr_enable && r_enable;
+    assign r_reset_n = csr_enable || r_enable;
 
     // control
     // bits, least significant to most

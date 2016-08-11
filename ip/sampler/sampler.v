@@ -83,7 +83,7 @@ module qsys_sampler
     reg csr_enable = 0;
 
     // our w_reset_n is driven by both the csr_enable and w_enable
-    assign w_reset_n = csr_enable && w_enable;
+    assign w_reset_n = csr_enable || w_enable;
 
     // control
     // bits, least significant to most
