@@ -298,3 +298,18 @@ set_interface_property sample CMSIS_SVD_VARIABLES ""
 set_interface_property sample SVD_ADDRESS_GROUP ""
 
 add_interface_port sample w_in export Input inputBits
+
+
+# 
+# connection point sample_enable
+# 
+add_interface sample_enable conduit end
+set_interface_property sample_enable associatedClock sample_clk
+set_interface_property sample_enable associatedReset ""
+set_interface_property sample_enable ENABLED true
+set_interface_property sample_enable EXPORT_OF ""
+set_interface_property sample_enable PORT_NAME_MAP ""
+set_interface_property sample_enable CMSIS_SVD_VARIABLES ""
+set_interface_property sample_enable SVD_ADDRESS_GROUP ""
+
+add_interface_port sample_enable w_enable export Input 1

@@ -60,7 +60,8 @@ module qsys_player
     (// read side
      input r_clk,
      output [outputBits-1:0] r_out,
-     output reg r_reset_n = 0,
+     output r_reset_n,
+     input r_enable,
                     
      // write side
      input clk,
@@ -82,6 +83,10 @@ module qsys_player
     wire [words-1:0] w_enable;
     wire [words-1:0] r_dones;
     wire r_done = r_dones[0];
+    reg csr_enable = 0;
+
+    // our r_reset_n is driven by both the csr_enable and r_enable
+    assign r_reset_n = csr_enable && r_enable;
 
     // control
     // bits, least significant to most
@@ -94,12 +99,12 @@ module qsys_player
     begin
         if (csr_write)
         begin
-            r_reset_n <= csr_writedata[0];
+            csr_enable <= csr_writedata[0];
             irq <= 0;
         end
         else if (csr_read)
         begin
-            csr_readdata[0] <= r_reset_n;
+            csr_readdata[0] <= csr_enable;
             csr_readdata[1] <= r_done;
             csr_readdata[2] <= irq;
         end
@@ -112,7 +117,7 @@ module qsys_player
         // if reset, then reset our reset (eww)
         if (!reset_n)
         begin
-            r_reset_n <= 0;
+            csr_enable <= 0;
             old_done <= 0;
             irq <= 0;
         end

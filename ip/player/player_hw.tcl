@@ -298,3 +298,18 @@ set_interface_property play CMSIS_SVD_VARIABLES ""
 set_interface_property play SVD_ADDRESS_GROUP ""
 
 add_interface_port play r_out export Output outputBits
+
+
+# 
+# connection point play_enable
+# 
+add_interface play_enable conduit end
+set_interface_property play_enable associatedClock play_clk
+set_interface_property play_enable associatedReset ""
+set_interface_property play_enable ENABLED true
+set_interface_property play_enable EXPORT_OF ""
+set_interface_property play_enable PORT_NAME_MAP ""
+set_interface_property play_enable CMSIS_SVD_VARIABLES ""
+set_interface_property play_enable SVD_ADDRESS_GROUP ""
+
+add_interface_port play_enable r_enable export Input 1

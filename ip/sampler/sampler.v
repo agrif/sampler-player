@@ -58,7 +58,8 @@ module qsys_sampler
     (// write side
      input w_clk,
      input [inputBits-1:0] w_in,
-     output reg w_reset_n = 0,
+     output w_reset_n,
+     input w_enable,
                     
      // read side
      input clk,
@@ -79,6 +80,10 @@ module qsys_sampler
     wire [timeBits-1:0] r_addr;
     wire [inputBits-1:0] r_out;
     wire w_done;
+    reg csr_enable = 0;
+
+    // our w_reset_n is driven by both the csr_enable and w_enable
+    assign w_reset_n = csr_enable && w_enable;
 
     // control
     // bits, least significant to most
@@ -91,12 +96,12 @@ module qsys_sampler
     begin
         if (csr_write)
         begin
-            w_reset_n <= csr_writedata[0];
+            csr_enable <= csr_writedata[0];
             irq <= 0;
         end
         else if (csr_read)
         begin
-            csr_readdata[0] <= w_reset_n;
+            csr_readdata[0] <= csr_enable;
             csr_readdata[1] <= w_done;
             csr_readdata[2] <= irq;
         end
@@ -109,7 +114,7 @@ module qsys_sampler
         // if reset, then reset our reset (eww)
         if (!reset_n)
         begin
-            w_reset_n <= 0;
+            csr_enable <= 0;
             old_done <= 0;
             irq <= 0;
         end
