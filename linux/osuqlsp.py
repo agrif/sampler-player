@@ -143,13 +143,11 @@ class SPPair:
 
         self.play.write(inputs)
 
-        # FIXME better simultaneous start
-        fs = self.samp.device.fileno()
-        fp = self.play.device.fileno()
-        ioctl = fcntl.ioctl
-        ioctl(fs, SET_ENABLED, 1)
-        ioctl(fp, SET_ENABLED, 1)
-
+        # this will only really work if the player is tied to the sampler
+        # with the enable line. otherwise, python is too slow.
+        self.samp.enabled = 1
+        self.play.enabled = 1
+        
         while not self.samp.done:
             continue
         while not self.play.done:
@@ -165,7 +163,7 @@ pair = SPPair('/dev/sampler0', '/dev/player0')
 import random
 import time
 
-ITERS = 100
+ITERS = 1
 start = time.time()
 
 inputs = numpy.array([[1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0]])
