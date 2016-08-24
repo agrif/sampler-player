@@ -1,0 +1,13 @@
+Source: sampler-player
+Section: embedded
+Priority: optional
+Maintainer: Aaron Griffith <griffith.637@osu.edu>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.5
+Homepage: https://github.com/agrif/sampler-player/
+Vcs-Git: git://github.com/agrif/sampler-player.git
+
+Package: sampler-player
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Driver for Sampler/Player modules.
