@@ -2,12 +2,24 @@ Source: sampler-player
 Section: embedded
 Priority: optional
 Maintainer: Aaron Griffith <griffith.637@osu.edu>
-Build-Depends: debhelper (>= 9)
+Build-Depends: debhelper (>= 9), dh-python, python-all, python3-all
+X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.2
 Standards-Version: 3.9.5
 Homepage: https://github.com/agrif/sampler-player/
 Vcs-Git: git://github.com/agrif/sampler-player.git
 
 Package: sampler-player
-Architecture: any
+Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Driver for Sampler/Player modules.
+
+Package: python3-osuqlsp
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Sampler/Player interface (Python 3)
+
+Package: python-osuqlsp
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}
+Description: Sampler/Player interface (Python 2)
