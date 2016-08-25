@@ -1,0 +1,2 @@
+# set the group to dialout (control over serial ports, very similar)
+DRIVERS=="sampler-player", GROUP="dialout"

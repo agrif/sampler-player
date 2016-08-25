@@ -6,10 +6,12 @@ player Qsys modules, as well as some examples. This README is a short
 bit of documentation.
 
 The *Sampler* reads data on its inputs into a memory chip, one after
-another. This memory can be read by a Nios II processor.
+another. This memory can be read by a Nios II processor or ARM Hard
+Processor.
 
 The *Player* writes data from memory into its outputs, one after
-another. This memory can be written to by a Nios II processor.
+another. This memory can be written to by a Nios II processor or ARM
+Hard Processor.
 
 Using These Modules
 -------------------
@@ -47,8 +49,8 @@ Each module has some connections you need to make:
 Usually, you'll want to connect the top 5 on each module, and export the
 bottom 3 so you can connect them in verilog.
 
-Talking to These Modules in C
------------------------------
+Talking to These Modules in C (on NiosII)
+-----------------------------------------
 
 These modules include a tiny driver you can use with the HAL BSP. It
 should be automatically added to your code when you use these modules.
