@@ -11,15 +11,20 @@ Vcs-Git: git://github.com/agrif/sampler-player.git
 
 Package: sampler-player
 Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, sampler-player-dkms, python3-osuqlsp, python-osuqlsp
+Description: Sampler/Player Metapackage
+
+Package: sampler-player-dkms
+Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Driver for Sampler/Player modules.
 
 Package: python3-osuqlsp
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
+Depends: ${python3:Depends}, ${misc:Depends}, sampler-player-dkms
 Description: Sampler/Player interface (Python 3)
 
 Package: python-osuqlsp
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}
+Depends: ${python:Depends}, ${misc:Depends}, sampler-player-dkms
 Description: Sampler/Player interface (Python 2)

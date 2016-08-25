@@ -30,7 +30,11 @@ include /usr/share/dpkg/default.mk
 VERSION=$(shell dpkg-parsechangelog | grep ^Version: | cut -d ' ' -f 2)
 
 override_dh_install:
-	dh_install linux/Makefile linux/*.h linux/*.c usr/src/sampler-player-$(VERSION)/
+	dh_install --package=sampler-player
+	dh_install --package=sampler-player-dkms linux/Makefile linux/*.h linux/*.c usr/src/sampler-player-$(VERSION)/
+	dh_install --package=python-osuqlsp
+	dh_install --package=python3-osuqlsp
+
 
 override_dh_dkms:
 	dh_dkms -V $(VERSION)
