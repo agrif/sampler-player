@@ -104,7 +104,7 @@ class SamplerOrPlayer:
 
     def write(self, inputs):
         time, samps = inputs.shape
-        if time >= self.time_length or samps >= self.sample_width:
+        if time > self.time_length or samps > self.sample_width:
             raise ValueError('too much data to write')
 
         inputs = numpy.packbits(inputs, axis=1)
