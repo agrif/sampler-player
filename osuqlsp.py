@@ -50,6 +50,11 @@ SET_ENABLED = _IO(IOC_MAGIC, 1)
 
 GET_DONE = _IO(IOC_MAGIC, 2)
 
+# to use numpy.packbits, we need a way to quickly swap LSB with MSB in a byte
+# so, use a table.
+# this is horrible, but (hilariously) faster than other methods
+swaptable = numpy.array([int('{:08b}'.format(n)[::-1], 2) for n in range(256)], dtype=numpy.uint8)
+
 def sysfs_property(name, type=int):
     def getter(self):
         v = getattr(self, '_' + name, None)
@@ -99,6 +104,7 @@ class SamplerOrPlayer:
         self.device.seek(0)
         outputs = numpy.fromfile(self.device, dtype=numpy.uint8, count=self.length)        
         outputs = numpy.reshape(outputs, (self.time_length, self.sample_length))
+        outputs = swaptable[outputs]
         outputs = numpy.unpackbits(outputs, axis=1)
         return outputs[:,:self.sample_width]
 
@@ -108,6 +114,7 @@ class SamplerOrPlayer:
             raise ValueError('too much data to write')
 
         inputs = numpy.packbits(inputs, axis=1)
+        inputs = swaptable[inputs]
         time, samps = inputs.shape
         inputs = numpy.pad(inputs, [(0, self.time_length - time), (0, self.sample_length - samps)], 'constant')
         
@@ -196,6 +203,6 @@ if __name__ == '__main__':
         end = time.time()
 
     print('ran {} iters in {} seconds ({} per second)'.format(args.iterations, end - start, args.iterations / (end - start)))
-    print('0x{:02x}'.format(*numpy.packbits(other)))
-    print(outputs)
-    print(outputs.shape)
+    print('shape', outputs.shape)
+    for t in range(outputs.shape[0]):
+        print(''.join(str(b) for b in outputs[t, :]))
