@@ -3,7 +3,11 @@ import fcntl
 import os.path
 import random
 import struct
-import time
+import urllib.request
+import http.server
+import io
+import struct
+import traceback
 
 import numpy
 
@@ -183,26 +187,80 @@ class SPPair:
 
         return self.samp.read()
 
+server_size_field = struct.Struct('>I')
+
+def server_pack(arr):
+    arr = numpy.array(arr)
+    with io.BytesIO() as f:
+        f.write(server_size_field.pack(arr.shape[1]))
+        arr = numpy.packbits(arr, axis=1)
+        numpy.save(f, arr)
+        return f.getvalue()
+
+def server_unpack(arr):
+    with io.BytesIO(arr) as f:
+        size = server_size_field.unpack(f.read(server_size_field.size))[0]
+        arr = numpy.load(f)
+        arr = numpy.unpackbits(arr, axis=1)
+        arr = arr[:,:size]
+    return arr
+
+class SPClient:
+    def __init__(self, host, port=8000):
+        self.host = host
+        self.port = port
+
+    def run(self, inputs):
+        url = 'http://{}:{}/run'.format(self.host, self.port)
+
+        with urllib.request.urlopen(url, server_pack(inputs)) as resp:
+            outputs = server_unpack(resp.read())
+        
+        return outputs
+
+class SPServer(http.server.HTTPServer):
+    class RequestHandler(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            try:
+                if self.path == '/run':
+                    self.handle_run()
+                else:
+                    self.send_error(404)
+            except Exception as e:
+                self.send_response(500, str(e))
+                self.send_header('Content-Type', 'text/plain; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(str(e).encode('utf-8'))
+
+        def handle_run(self):
+            inputs = server_unpack(self.rfile.read(int(self.headers['Content-Length'])))
+            outputs = server_pack(self.server.pair.run(inputs))
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/octet-stream')
+            self.end_headers()
+            self.wfile.write(outputs)
+    
+    def __init__(self, pair, host='', port=8000):
+        self.pair = pair
+        super().__init__((host, port), self.RequestHandler)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('sampler')
     parser.add_argument('player')
-    parser.add_argument('-i', '--iterations', type=int, default=100)
+    parser.add_argument('--server', action='store_true', default=False, help='run a sampler/player server, instead of feeding a pulse')
+    parser.add_argument('--port', type=int, default=8000)
+    parser.add_argument('--host', type=str, default='')
 
     args = parser.parse_args()
     pair = SPPair(args.sampler, args.player)
 
-    start = time.time()
+    if args.server:
+        server = SPServer(pair, host=args.host, port=args.port)
+        server.serve_forever()
 
-    inputs = numpy.array([[1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0]])
-    for _ in range(args.iterations):
-        other = [random.choice([0, 1]) for _ in range(8)]
-        inputs[1,:] = other
-        outputs = pair.run(inputs)
-
-        end = time.time()
-
-    print('ran {} iters in {} seconds ({} per second)'.format(args.iterations, end - start, args.iterations / (end - start)))
-    print('shape', outputs.shape)
+    inputs = numpy.array([[0], [1], [0]])
+    outputs = pair.run(inputs)
     for t in range(outputs.shape[0]):
         print(''.join(str(b) for b in outputs[t, :]))
