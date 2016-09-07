@@ -192,17 +192,20 @@ server_size_field = struct.Struct('>I')
 def server_pack(arr):
     arr = numpy.array(arr)
     with io.BytesIO() as f:
+        f.write(server_size_field.pack(arr.shape[0]))
         f.write(server_size_field.pack(arr.shape[1]))
         arr = numpy.packbits(arr, axis=1)
-        numpy.save(f, arr)
+        f.write(memoryview(arr))
         return f.getvalue()
 
 def server_unpack(arr):
     with io.BytesIO(arr) as f:
-        size = server_size_field.unpack(f.read(server_size_field.size))[0]
-        arr = numpy.load(f)
+        size1 = server_size_field.unpack(f.read(server_size_field.size))[0]
+        size2 = server_size_field.unpack(f.read(server_size_field.size))[0]
+        arr = numpy.frombuffer(f.read(), dtype=numpy.uint8)
+        arr = numpy.reshape(arr, (size1, len(arr) // size1))
         arr = numpy.unpackbits(arr, axis=1)
-        arr = arr[:,:size]
+        arr = arr[:,:size2]
     return arr
 
 class SPClient:
