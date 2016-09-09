@@ -203,7 +203,11 @@ def server_unpack(arr):
         size1 = server_size_field.unpack(f.read(server_size_field.size))[0]
         size2 = server_size_field.unpack(f.read(server_size_field.size))[0]
         arr = numpy.frombuffer(f.read(), dtype=numpy.uint8)
-        arr = numpy.reshape(arr, (size1, len(arr) // size1))
+        if size1:
+            othersize = len(arr) // size1
+        else:
+            othersize = 0
+        arr = numpy.reshape(arr, (size1, othersize))
         arr = numpy.unpackbits(arr, axis=1)
         arr = arr[:,:size2]
     return arr
