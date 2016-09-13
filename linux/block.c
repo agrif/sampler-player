@@ -8,6 +8,26 @@
 
 int osuql_sp_major_num = 0;
 
+static void memcpy_fromio_word(void* to, const volatile void __iomem* from, size_t count) {
+    u32* t = to;
+    while (count) {
+        count--;
+        *t = readl(from);
+        t++;
+        from++;
+    }
+}
+
+static void memcpy_toio_word(volatile void __iomem* to, const void* from, size_t count) {
+    const u32* f = from;
+    while (count) {
+        count--;
+        writel(*f, to);
+        f++;
+        to++;
+    }
+}
+
 static void request(struct request_queue* q) {
     struct request* req;
     struct sp_device* sp;
@@ -36,10 +56,10 @@ static void request(struct request_queue* q) {
             // device buffer is in sp->buffer
             if (rq_data_dir(req)) {
                 // write
-                memcpy_toio(sp->buffer + start, req->buffer, size);
+                memcpy_toio_word(sp->buffer + start, req->buffer, size / 4);
             } else {
                 // read
-                memcpy_fromio(req->buffer, sp->buffer + start, size);
+                memcpy_fromio_word(req->buffer, sp->buffer + start, size / 4);
             }
             
             chunks_left = __blk_end_request_cur(req, 0);
