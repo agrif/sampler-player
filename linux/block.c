@@ -14,7 +14,7 @@ static void memcpy_fromio_word(void* to, const volatile void __iomem* from, size
         count--;
         *t = readl(from);
         t++;
-        from++;
+        from += sizeof(u32);
     }
 }
 
@@ -24,7 +24,7 @@ static void memcpy_toio_word(volatile void __iomem* to, const void* from, size_t
         count--;
         writel(*f, to);
         f++;
-        to++;
+        to += sizeof(u32);
     }
 }
 
@@ -56,10 +56,10 @@ static void request(struct request_queue* q) {
             // device buffer is in sp->buffer
             if (rq_data_dir(req)) {
                 // write
-                memcpy_toio_word(sp->buffer + start, req->buffer, size / 4);
+                memcpy_toio_word(sp->buffer + start, req->buffer, size / sizeof(u32));
             } else {
                 // read
-                memcpy_fromio_word(req->buffer, sp->buffer + start, size / 4);
+                memcpy_fromio_word(req->buffer, sp->buffer + start, size / sizeof(u32));
             }
             
             chunks_left = __blk_end_request_cur(req, 0);
