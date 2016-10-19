@@ -66,7 +66,7 @@ struct sp_device {
     // see "attributes.h" for exposing these via sysfs
 
     // how many bits count as 1 sample
-    u8 sample_width;
+    u32 sample_width;
 
     // how many bits are used to address within each sample
     u8 sample_bits;
