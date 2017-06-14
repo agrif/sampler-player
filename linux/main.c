@@ -3,7 +3,7 @@
 #include "sampler-player.h"
 
 MODULE_AUTHOR("Aaron Griffith");
-MODULE_LICENSE("Dual BSD/GPL");
+MODULE_LICENSE("Dual MIT/GPL");
 MODULE_DESCRIPTION("Sampler/Player Control");
 
 static int __init initialize(void) {

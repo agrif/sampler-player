@@ -52,14 +52,14 @@ static void request(struct request_queue* q) {
                 continue;
             }
 
-            // request buffer is in req->buffer
+            // request buffer is in bio_data(req->bio)
             // device buffer is in sp->buffer
             if (rq_data_dir(req)) {
                 // write
-                memcpy_toio_word(sp->buffer + start, req->buffer, size / sizeof(u32));
+                memcpy_toio_word(sp->buffer + start, bio_data(req->bio), size / sizeof(u32));
             } else {
                 // read
-                memcpy_fromio_word(req->buffer, sp->buffer + start, size / sizeof(u32));
+                memcpy_fromio_word(bio_data(req->bio), sp->buffer + start, size / sizeof(u32));
             }
             
             chunks_left = __blk_end_request_cur(req, 0);
@@ -141,10 +141,9 @@ int osuql_sp_init_block(struct sp_device* sp) {
     sp->gd->fops = &ops;
     sp->gd->queue = sp->queue;
     sp->gd->private_data = sp;
-    sp->gd->driverfs_dev = sp->dev;
     snprintf(sp->gd->disk_name, 32, "%s%i", BY_TYPE(sp->type, SAMPLER_DEV, PLAYER_DEV), sp->number);
     set_capacity(sp->gd, (sp->length + KERNEL_SECTOR_SIZE - 1) / KERNEL_SECTOR_SIZE);
-    add_disk(sp->gd);
+    device_add_disk(sp->dev, sp->gd);
     
     return 0;
 }
