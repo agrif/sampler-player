@@ -1,13 +1,21 @@
+from __future__ import print_function
+
 import argparse
+import sys
 import fcntl
 import os.path
 import random
 import struct
-import urllib.request
-import http.server
 import io
 import struct
 import traceback
+
+if sys.version_info >= (3, 0):
+    import urllib.request as urllib_request
+    import http.server as http_server
+else:
+    import urllib2 as urllib_request
+    import BaseHTTPServer as http_server
 
 import numpy
 
@@ -78,7 +86,7 @@ def ioctl_property(get, set=None):
         return property(getter, setter)
     return property(getter)
 
-class SamplerOrPlayer:
+class SamplerOrPlayer(object):
     def __init__(self, path):
         if not path.startswith('/dev/'):
             raise ValueError('not a valid device')
@@ -117,7 +125,7 @@ class SamplerOrPlayer:
         if time > self.time_length or samps > self.sample_width:
             raise ValueError('too much data to write')
 
-        inputs = numpy.packbits(inputs, axis=1)
+        inputs = numpy.packbits(inputs.astype(int), axis=1)
         inputs = swaptable[inputs]
         time, samps = inputs.shape
         inputs = numpy.pad(inputs, [(0, self.time_length - time), (0, self.sample_length - samps)], 'constant')
@@ -151,17 +159,17 @@ class SamplerOrPlayer:
 
 class Sampler(SamplerOrPlayer):
     def __init__(self, device):
-        super().__init__(device)
+        super(Sampler, self).__init__(device)
         if not self.type == 'sampler':
             raise RuntimeError('device is not a sampler')
 
 class Player(SamplerOrPlayer):
     def __init__(self, device):
-        super().__init__(device)
+        super(Player, self).__init__(device)
         if not self.type == 'player':
             raise RuntimeError('device is not a player')
     
-class SPPair:
+class SPPair(object):
     def __init__(self, sampler, player):
         self.samp = Sampler(sampler)
         self.play = Player(player)
@@ -220,13 +228,13 @@ class SPClient:
     def run(self, inputs):
         url = 'http://{}:{}/run'.format(self.host, self.port)
 
-        with urllib.request.urlopen(url, server_pack(inputs)) as resp:
+        with urllib_request.urlopen(url, server_pack(inputs)) as resp:
             outputs = server_unpack(resp.read())
         
         return outputs
 
-class SPServer(http.server.HTTPServer):
-    class RequestHandler(http.server.BaseHTTPRequestHandler):
+class SPServer(http_server.HTTPServer):
+    class RequestHandler(http_server.BaseHTTPRequestHandler):
         def do_POST(self):
             try:
                 if self.path == '/run':
@@ -250,7 +258,7 @@ class SPServer(http.server.HTTPServer):
     
     def __init__(self, pair, host='', port=8000):
         self.pair = pair
-        super().__init__((host, port), self.RequestHandler)
+        super(SPServer, self).__init__((host, port), self.RequestHandler)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
