@@ -2,7 +2,7 @@ Source: sampler-player
 Section: embedded
 Priority: optional
 Maintainer: Aaron Griffith <griffith.637@osu.edu>
-Build-Depends: debhelper (>= 9), dh-python, python-all, python3-all
+Build-Depends: debhelper (>= 9), dh-python, python-all, python3-all, dkms
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.2
 Standards-Version: 3.9.5
@@ -21,10 +21,10 @@ Description: Driver for Sampler/Player modules.
 
 Package: python3-osuqlsp
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, sampler-player-dkms
+Depends: ${python3:Depends}, ${misc:Depends}, sampler-player-dkms, python3-numpy
 Description: Sampler/Player interface (Python 3)
 
 Package: python-osuqlsp
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, sampler-player-dkms
+Depends: ${python:Depends}, ${misc:Depends}, sampler-player-dkms, python-numpy
 Description: Sampler/Player interface (Python 2)
