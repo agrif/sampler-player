@@ -7,8 +7,8 @@ import os.path
 import random
 import struct
 import io
-import struct
 import traceback
+import mmap
 
 if sys.version_info >= (3, 0):
     import urllib.request as urllib_request
@@ -18,6 +18,26 @@ else:
     import BaseHTTPServer as http_server
 
 import numpy
+
+# some base addresses for AXI bridges
+H2F_LW_AXI_MASTER = 0xff200000
+H2F_AXI_MASTER = 0xc0000000
+
+# mmap only works on page boundaries, so here's a helper
+def kludgy_mmap(fno, size, offset):
+    page = mmap.ALLOCATIONGRANULARITY
+    p_offset = int(numpy.floor(offset / page)) * page
+    offset_diff = offset - p_offset
+    assert offset_diff >= 0
+    assert p_offset % page == 0
+    
+    new_size = size + offset_diff
+    p_size = int(numpy.ceil(new_size / page)) * page
+    assert p_size >= size
+    assert p_size % page == 0
+
+    whole_buf = mmap.mmap(fno, p_size, offset=p_offset)
+    return whole_buf, offset_diff
 
 # some ioctl nonsense
 # http://code.activestate.com/recipes/578225-linux-ioctl-numbers-in-python/
@@ -86,7 +106,28 @@ def ioctl_property(get, set=None):
         return property(getter, setter)
     return property(getter)
 
-class SamplerOrPlayer(object):
+class SamplerPlayerBase(object):
+    def read(self):
+        # read fresh stuff
+        outputs = self.read_raw()
+        outputs = numpy.reshape(outputs, (self.time_length, self.sample_length))
+        outputs = swaptable[outputs]
+        outputs = numpy.unpackbits(outputs, axis=1)
+        return outputs[:,:self.sample_width]
+
+    def write(self, inputs):
+        time, samps = inputs.shape
+        if time > self.time_length or samps > self.sample_width:
+            raise ValueError('too much data to write')
+
+        inputs = numpy.packbits(inputs.astype(int), axis=1)
+        inputs = swaptable[inputs]
+        time, samps = inputs.shape
+        inputs = numpy.pad(inputs, [(0, self.time_length - time), (0, self.sample_length - samps)], 'constant')
+
+        self.write_raw(inputs)
+
+class DriverSamplerPlayer(SamplerPlayerBase):
     def __init__(self, path):
         if not path.startswith('/dev/'):
             raise ValueError('not a valid device')
@@ -110,31 +151,14 @@ class SamplerOrPlayer(object):
         else:
             raise RuntimeError('unknown type ' + self.type)
 
-    def read(self):
-        # read fresh stuff
+    def read_raw(self):
         self.reload()
         self.device.seek(0)
-        outputs = numpy.fromfile(self.device, dtype=numpy.uint8, count=self.length)        
-        outputs = numpy.reshape(outputs, (self.time_length, self.sample_length))
-        outputs = swaptable[outputs]
-        outputs = numpy.unpackbits(outputs, axis=1)
-        return outputs[:,:self.sample_width]
+        return numpy.fromfile(self.device, dtype=numpy.uint8, count=self.length)
 
-    def write(self, inputs):
-        time, samps = inputs.shape
-        if time > self.time_length or samps > self.sample_width:
-            raise ValueError('too much data to write')
-
-        inputs = numpy.packbits(inputs.astype(int), axis=1)
-        inputs = swaptable[inputs]
-        time, samps = inputs.shape
-        inputs = numpy.pad(inputs, [(0, self.time_length - time), (0, self.sample_length - samps)], 'constant')
-        
+    def write_raw(self, inputs):
         self.device.seek(0)
         inputs.tofile(self.device)
-
-        # flush to disk (a hack)
-        #self.device.flush()
         self.reload()
 
     def get_sysfs(self, attr, type=int):
@@ -157,22 +181,71 @@ class SamplerOrPlayer(object):
     enabled = ioctl_property(GET_ENABLED, SET_ENABLED)
     done = ioctl_property(GET_DONE)
 
-class Sampler(SamplerOrPlayer):
+class MemSamplerPlayer(SamplerPlayerBase):
+    def __init__(self, typ, csr_addr, base_addr, sample_width, time_bits):
+        self.type = typ
+        self.sample_width = sample_width
+        self.time_bits = time_bits
+
+        # calculated
+        self.sample_bits = int(numpy.ceil(numpy.log(sample_width / 32.0) / numpy.log(2))) + 2
+        self.sample_length = 1 << self.sample_bits
+        self.time_length = 1 << self.time_bits
+        self.bits = self.time_bits + self.sample_bits
+        self.length = self.time_length * self.sample_length
+
+        with open('/dev/mem', 'r+b') as f:
+            self.csr, self.csr_start = kludgy_mmap(f.fileno(), 4, offset=csr_addr)
+            self.data, self.data_start = kludgy_mmap(f.fileno(), self.length, offset=base_addr)
+
+    def read_raw(self):
+        return numpy.frombuffer(self.data[self.data_start:self.data_start + self.length], dtype=numpy.uint8, count=self.length)
+
+    def write_raw(self, inputs):
+        self.data[self.data_start:self.data_start + self.length] = inputs
+
+    def get_enabled(self):
+        return bool(self.csr[self.csr_start] & 0x1)
+
+    def set_enabled(self, enabled):
+        self.csr[self.csr_start] = (self.csr[self.csr_start] & (~0x1)) | (0x1 if enabled else 0)
+
+    enabled = property(get_enabled, set_enabled)
+
+    @property
+    def done(self):
+        return bool(self.csr[self.csr_start] & 0x2)
+
+class Sampler(DriverSamplerPlayer):
     def __init__(self, device):
         super(Sampler, self).__init__(device)
         if not self.type == 'sampler':
             raise RuntimeError('device is not a sampler')
 
-class Player(SamplerOrPlayer):
+class Player(DriverSamplerPlayer):
     def __init__(self, device):
         super(Player, self).__init__(device)
         if not self.type == 'player':
             raise RuntimeError('device is not a player')
+
+class MemSampler(MemSamplerPlayer):
+    def __init__(self, *args, **kwargs):
+        super(MemSampler, self).__init__('sampler', *args, **kwargs)
+
+class MemPlayer(MemSamplerPlayer):
+    def __init__(self, *args, **kwargs):
+        super(MemPlayer, self).__init__('player', *args, **kwargs)
     
 class SPPair(object):
     def __init__(self, sampler, player):
-        self.samp = Sampler(sampler)
-        self.play = Player(player)
+        if isinstance(sampler, str):
+            self.samp = Sampler(sampler)
+        else:
+            self.samp = sampler
+        if isinstance(player, str):
+            self.play = Player(player)
+        else:
+            self.play = player
 
     def run(self, inputs):
         self.samp.enabled = 0
