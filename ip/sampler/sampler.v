@@ -82,8 +82,19 @@ module qsys_sampler
     wire w_done;
     reg csr_enable = 0;
 
+    // w_reset_n is driven by clk, but needs to be crossed into w_clk
+    reg w_reset_n_sync_in;
+    reg w_reset_n_sync_out;
+
     // our w_reset_n is driven by both the csr_enable and w_enable
     assign w_reset_n = csr_enable || w_enable;
+
+    // synchronize w_reset_n to w_clk
+    always @(posedge w_clk)
+    begin
+        w_reset_n_sync_in <= w_reset_n;
+        w_reset_n_sync_out <= w_reset_n_sync_in;
+    end
 
     // control
     // bits, least significant to most
@@ -130,5 +141,5 @@ module qsys_sampler
             saved_addr <= buffer_address[words_log_2-1:0];
     end
     
-    sampler #(inputBits, timeBits) s(w_clk, w_reset_n, w_in, w_done, clk, buffer_read, r_addr, r_out);
+    sampler #(inputBits, timeBits) s(w_clk, w_reset_n_sync_out, w_in, w_done, clk, buffer_read, r_addr, r_out);
 endmodule

@@ -304,7 +304,7 @@ add_interface_port play r_out export Output outputBits
 # connection point play_enable
 # 
 add_interface play_enable conduit end
-set_interface_property play_enable associatedClock play_clk
+set_interface_property play_enable associatedClock buffer_clk
 set_interface_property play_enable associatedReset ""
 set_interface_property play_enable ENABLED true
 set_interface_property play_enable EXPORT_OF ""

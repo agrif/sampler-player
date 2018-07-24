@@ -304,7 +304,7 @@ add_interface_port sample w_in export Input inputBits
 # connection point sample_enable
 # 
 add_interface sample_enable conduit end
-set_interface_property sample_enable associatedClock sample_clk
+set_interface_property sample_enable associatedClock buffer_clk
 set_interface_property sample_enable associatedReset ""
 set_interface_property sample_enable ENABLED true
 set_interface_property sample_enable EXPORT_OF ""

@@ -30,16 +30,16 @@ module player(r_clk, r_reset_n, r_out, r_done, w_clk, w_enable, w_addr, w_in);
         // if we're not reset, and we're playing...
         if (r_reset_n && !r_done)
         begin
-            r_out <= memory[r_addr[timeBits-1:0]];
             r_addr <= r_addr + 1;
         end
 
         // if we're reset
         if (!r_reset_n)
         begin
-            r_out <= memory[0];
             r_addr <= 0;
         end
+
+        r_out <= memory[r_addr[timeBits-1:0]];
     end
 
     // write side
@@ -85,8 +85,19 @@ module qsys_player
     wire r_done = r_dones[0];
     reg csr_enable = 0;
 
+    // r_reset_n is driven by clk, but needs to be crossed into r_clk
+    reg r_reset_n_sync_in;
+    reg r_reset_n_sync_out;
+
     // our r_reset_n is driven by both the csr_enable and r_enable
     assign r_reset_n = csr_enable || r_enable;
+
+    // synchronize r_reset_n to r_clk
+    always @(posedge r_clk)
+    begin
+        r_reset_n_sync_in <= r_reset_n;
+        r_reset_n_sync_out <= r_reset_n_sync_in;
+    end
 
     // control
     // bits, least significant to most
@@ -136,7 +147,7 @@ module qsys_player
     generate
         for (i = 0; i < words; i = i + 1)
         begin : players
-            player #(timeBits) p(r_clk, r_reset_n, r_out[((i == words-1) ? (outputBits-1) : (32*i+31)):32*i], r_dones[i], clk, w_enable[i], w_addr, buffer_writedata);
+            player #(timeBits) p(r_clk, r_reset_n_sync_out, r_out[((i == words-1) ? (outputBits-1) : (32*i+31)):32*i], r_dones[i], clk, w_enable[i], w_addr, buffer_writedata);
         end
     endgenerate
 endmodule
